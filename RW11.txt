@@ -1,0 +1,23 @@
+en
+config t
+int gig 0/1
+ip add 192.168.29.106 255.255.255.0
+description 'MGMT'
+no sh 
+!
+ip domain name lab.local
+!
+crypto key generate rsa 
+2048
+!
+username bharat priv 15 secret Nyk@@123#
+!
+line vty 0 4 
+login local
+transport input ssh 
+!
+line vty 4 15
+login local
+transport input ssh 
+!
+do wr

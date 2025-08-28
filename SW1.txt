@@ -1,0 +1,42 @@
+en
+config t
+hostname ISW
+int gig 0/3
+no switchport
+ip add 192.168.122.20 255.255.255.0
+description 'MGMT'
+no sh 
+!
+ip domain name lab.local
+!
+crypto key generate rsa 
+2048
+!
+username bharat priv 15 secret Nyk@@123#
+!
+line vty 0 4 
+login local
+transport input ssh 
+!
+line vty 4 15
+login local
+transport input ssh 
+!
+do wr
+
+
+ip ssh pubkey-chain
+username ansible_user
+key-string
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCxpZro5lfKMkT60FGe2HPJj7rHH2w+855GjIaawrU/
+br3FOe5T5s1jiMIqHZ3XuT8MDoVEDVYsVWhNxk4HHmC+oUgBEnAiiLgire5MMZpTO+5oIrYupcz1/rzO
+6OmxKHBh3VkVjCjzy1UIcy6jE5FEFRL1cnCmdCMznpDLKzF7FksldJMORMW9tNWzfyvVtmZK0C3Ne1sM
+V+5Y2LQtsRbE1Ed9SshVtr5H/f2+dBMbL3BQSjLCSgT+mNSZOSPvnivU9RdKkecYFAWNycnt/9j5dc0r
+Szn41pVuFxNZu9T3RC95jIBcEPeTg6/xqt8a6hWeeSwRs8ZusL9L1+sHh7iS5HohO7S7rlo0U1L3cr3t
+rqYnzbXrotOJoiozX8XmeYQQZVJkMBEAVrmq8AjP+VdSh3Q2GU0OAjqv0Hwn4B/tc+JxpMYYWB2hIKq6
+bY1uYdfwNMkCALTlvmm/QemBheVfVNu0ou/I/a8nRUpBapsNofsyqirBFvPTPSBKVvbPAlU= bharat@
+fedora
+exit
+exit
+!
+username ansible_user priv 15

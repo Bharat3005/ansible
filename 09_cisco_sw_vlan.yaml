@@ -1,0 +1,76 @@
+---
+- name: IOS Command from file demo
+  hosts: switches
+  gather_facts: no
+  tasks:
+    - name: Access port configuration on cisco switch
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/2
+            access:
+              vlan: 200
+        state: merged
+    
+    - name: forcing the interface in the trunk GigabitEthernet0/2
+      cisco.ios.ios_config:
+        parents: interface GigabitEthernet0/2
+        lines:
+          - switchport trunk encapsulation dot1q
+      register: int
+
+
+    - name: forcing the interface in the trunk GigabitEthernet0/1
+      cisco.ios.ios_config:
+        parents: interface GigabitEthernet0/1
+        lines:
+          - switchport trunk encapsulation dot1q
+      register: int
+
+    - name: configuring interface as a trunk GigabitEthernet0/2
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/2
+            mode: trunk
+            trunk:
+              encapsulation: isl
+              native_vlan: 10
+              allowed_vlans: 10-15
+        state: merged
+      register: int
+  
+
+    - name: configuring interface as a trunk GigabitEthernet0/1
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/1
+            mode: trunk
+            trunk:
+              encapsulation: isl
+              native_vlan: 10
+              allowed_vlans: 10-15
+        state: merged
+      register: int
+  
+  
+    - debug: 
+        var: int.before
+
+    - debug:
+        var: int.commands
+    
+    - debug:
+        var: int.after
+
+
+# ######## configuration override method ###########
+
+
+#     - name: configuring interface as a trunk GigabitEthernet0/1
+#       cisco.ios.ios_l2_interfaces:
+#         config:
+#           - name: GigabitEthernet0/1
+#             trunk:
+#               encapsulation: dot1q
+#               native_vlan: 10
+#               allowed_vlans: 10-15
+#         state: overridden  

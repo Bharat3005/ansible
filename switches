@@ -1,0 +1,25 @@
+[dc_switches:children]
+switches_spine
+leaf_switches
+
+[switches_spine]
+sw3 ansible_host=192.168.29.103 ansible_user=ansible_user
+sw4 ansible_host=192.168.29.104 ansible_user=ansible_user
+
+[switches_spine:vars]
+ansible_connection=network_cli
+ansible_network_os=ios
+ansible_ssh_private_key_file=/home/bharat/.ssh/id_rsa
+ansible_become=yes
+ansible_become_method=enable
+
+[leaf_switches]
+sw1 ansible_host=192.168.29.101 ansible_user=ansible_user
+sw2 ansible_host=192.168.29.102 ansible_user=ansible_user
+
+[leaf_switches:vars]
+ansible_connection=network_cli
+ansible_network_os=ios
+ansible_ssh_private_key_file=/home/bharat/.ssh/id_rsa
+ansible_become=yes
+ansible_become_method=enable

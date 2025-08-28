@@ -1,0 +1,89 @@
+---
+- name: Configure Cisco Switch Trunk Interfaces
+  hosts: nw_switches
+  gather_facts: no
+  connection: network_cli
+  
+  vars:
+    # Define your trunk interfaces
+    trunk_interfaces:
+      - GigabitEthernet0/0
+      - GigabitEthernet0/1
+      - GigabitEthernet0/2
+    
+    # Define VLAN range
+    vlan_range: "10-20"
+    vlan_list: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    
+    # # Switch credentials and connection details
+    # ansible_network_os: ios
+    # ansible_user: admin
+    # ansible_password: "{{ vault_password | default('cisco') }}"
+    # ansible_connection: network_cli
+    # ansible_become: yes
+    # ansible_become_method: enable
+    # ansible_become_password: "{{ vault_enable_password | default('cisco') }}"
+
+  tasks:
+    # Task 1: Create VLANs first
+    - name: Create VLANs 10-20
+      cisco.ios.ios_vlans:
+        config:
+          - vlan_id: "{{ item }}"
+            name: "VLAN_{{ item }}"
+            state: active
+        state: merged
+      loop: "{{ vlan_list }}"
+      tags: vlans
+
+    # Task 2: Configure trunk encapsulation (for switches that support both ISL and 802.1Q)
+    - name: Configure trunk encapsulation dot1q
+      cisco.ios.ios_config:
+        lines:
+          - switchport trunk encapsulation dot1q
+        parents: interface {{ item }}
+      loop: "{{ trunk_interfaces }}"
+      tags: encapsulation
+      ignore_errors: yes  # Some switches only support dot1q and will error
+
+    # Task 3: Configure trunk interfaces
+    - name: Configure trunk interfaces
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: "{{ item }}"
+            mode: trunk
+            trunk:
+              allowed_vlans: "{{ vlan_range }}"
+              native_vlan: 1
+        state: merged
+      loop: "{{ trunk_interfaces }}"
+      tags: trunks
+
+    # # Task 3: Alternative method using ios_config for more granular control
+    # - name: Configure interfaces with ios_config (alternative method)
+    #   cisco.ios.ios_config:
+    #     lines:
+    #       - switchport mode trunk
+    #       - switchport trunk allowed vlan {{ vlan_range }}
+    #       - switchport trunk native vlan 1
+    #       - no shutdown
+    #     parents: interface {{ item }}
+    #   loop: "{{ trunk_interfaces }}"
+    #   tags: config_alternative
+
+    # Task 4: Verify configuration
+    - name: Verify trunk configuration
+      cisco.ios.ios_command:
+        commands:
+          - show interfaces {{ item }} switchport
+      loop: "{{ trunk_interfaces }}"
+      register: trunk_status
+      tags: verify
+
+    # Task 5: Display verification results
+    - name: Display trunk status
+      debug:
+        msg: "{{ item.stdout[0] }}"
+      loop: "{{ trunk_status.results }}"
+      when: trunk_status is defined
+      tags: verify

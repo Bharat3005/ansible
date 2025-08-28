@@ -1,0 +1,116 @@
+---
+# Ansible Playbook to Configure Static Routes on Routers
+# This playbook supports multiple router platforms (Cisco, Juniper, etc.)
+
+- name: Configure Static Routes on Routers
+  hosts: routers
+  gather_facts: no
+  connection: network_cli
+  vars:
+    # Define your static routes here
+    static_routes:
+      - dest: "192.168.10.0/24"
+        next_hop: "192.168.10.1"
+        metric: 1
+      #   description: "Route to Branch Office"
+      # - dest: "172.16.0.0/16"
+      #   next_hop: "192.168.10.254"
+      #   metric: 10
+      #   description: "Route to Data Center"
+
+  tasks:
+    # For Cisco IOS/IOS-XE routers
+    - name: Configure static routes on Cisco routers
+      cisco.ios.ios_static_routes:
+        config:
+          - vrf: global
+            address_families:
+              - afi: ipv4
+                routes:
+                  - dest: "{{ item.dest }}"
+                    next_hops:
+                      - forward_router_address: "{{ item.next_hop }}"
+                        admin_distance: "{{ item.metric | default(1) }}"
+                        description: "{{ item.description | default('Static route') }}"
+        state: merged
+      loop: "{{ static_routes }}"
+      when: ansible_network_os == 'cisco.ios.ios'
+
+    # Alternative method using raw commands for older Ansible versions or different platforms
+    # - name: Add static routes using CLI commands (Generic)
+    #   ansible.netcommon.cli_command:
+    #     command: "{{ route_command }}"
+    #   vars:
+    #     route_command: >-
+    #       {%- if ansible_network_os == 'cisco.ios.ios' -%}
+    #       ip route {{ item.dest }} {{ item.next_hop }} {{ item.metric | default(1) }}
+    #       {%- elif ansible_network_os == 'arista.eos.eos' -%}
+    #       ip route {{ item.dest }} {{ item.next_hop }} {{ item.metric | default(1) }}
+    #       {%- elif ansible_network_os == 'juniper.junos.junos' -%}
+    #       set routing-options static route {{ item.dest }} next-hop {{ item.next_hop }}
+    #       {%- else -%}
+    #       # Add command for your specific router OS
+    #       {%- endif -%}
+    #   loop: "{{ static_routes }}"
+    #   when: ansible_network_os in ['cisco.ios.ios', 'arista.eos.eos', 'juniper.junos.junos']
+
+    # Save configuration
+    - name: Save running configuration
+      ansible.netcommon.cli_command:
+        command: "{{ save_command }}"
+      vars:
+        save_command: >-
+          {%- if ansible_network_os == 'cisco.ios.ios' -%}
+          write memory
+          {%- elif ansible_network_os == 'arista.eos.eos' -%}
+          write memory
+          {%- elif ansible_network_os == 'juniper.junos.junos' -%}
+          commit
+          {%- else -%}
+          # Add save command for your specific router OS
+          {%- endif -%}
+
+    # Verify routes are installed
+    - name: Verify static routes
+      ansible.netcommon.cli_command:
+        command: "{{ verify_command }}"
+      vars:
+        verify_command: >-
+          {%- if ansible_network_os == 'cisco.ios.ios' -%}
+          show ip route static
+          {%- elif ansible_network_os == 'arista.eos.eos' -%}
+          show ip route static
+          {%- elif ansible_network_os == 'juniper.junos.junos' -%}
+          show route protocol static
+          {%- else -%}
+          # Add verification command for your specific router OS
+          {%- endif -%}
+      register: route_verification
+
+    - name: Display route verification
+      debug:
+        msg: "{{ route_verification.stdout_lines }}"
+
+# ---
+
+# #---
+# # inventory.yml - Example inventory file
+# # Copy this content to a separate inventory.yml file
+
+# #---
+# # group_vars/routers.yml - Example group variables
+# # Copy this content to group_vars/routers.yml
+# ---
+# #Common settings for all routers
+# ansible_become: yes
+# ansible_become_method: enable
+# ansible_become_password: "{{ vault_enable_password }}"
+
+# # Connection timeout settings
+# ansible_command_timeout: 60
+# ansible_connect_timeout: 60
+
+# # Platform-specific settings
+# cisco_ios:
+#   timeout: 60
+#   retries: 3

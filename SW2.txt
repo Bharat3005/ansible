@@ -1,0 +1,25 @@
+en
+config t
+hostname SW2
+int gig 1/0
+no switchport
+ip add 192.168.29.102 255.255.255.0
+description 'MGMT'
+no sh 
+!
+ip domain name lab.local
+!
+crypto key generate rsa 
+2048
+!
+username bharat priv 15 secret Nyk@@123#
+!
+line vty 0 4 
+login local
+transport input ssh 
+!
+line vty 4 15
+login local
+transport input ssh 
+!
+do wr

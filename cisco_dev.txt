@@ -1,0 +1,6 @@
+router ospf 100 
+ network 0.0.0.0 0.0.0.0 area 0
+!
+ip domain-name lab.local 
+!
+ip name-server 8.8.8.8

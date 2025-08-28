@@ -1,0 +1,76 @@
+- name: IOS Command from file demo
+  hosts: switches
+  gather_facts: 'no'
+  tasks:
+    - name: vlan range creation on the switches
+      cisco.ios.ios_vlans:
+        config:
+          - name: vlan_10
+            vlan_id: 10
+            state: active
+            shutdown: disabled
+          - name: vlan_11
+            vlan_id: 11
+            state: active
+            shutdown: disabled
+          - name: vlan_12
+            vlan_id: 12
+            state: active
+            shutdown: disabled
+          - name: vlan_13
+            vlan_id: 13
+            state: active
+            shutdown: disabled
+          - name: vlan_14
+            vlan_id: 14
+            state: active
+            shutdown: disabled
+          - name: vlan_14
+            vlan_id: 15
+            state: active
+            shutdown: disabled
+          - name: vlan_15
+            vlan_id: 15
+            state: active
+            shutdown: disabled
+          - name: vlan_16
+            vlan_id: 16
+            state: active
+            shutdown: disabled
+        state: merged
+      register: int
+    - name: Configure trunk encapsulation on GigabitEthernet interfaces
+      cisco.ios.ios_config:
+        parents: 'interface {{ item }}'
+        lines:
+          - switchport trunk encapsulation dot1q
+      loop:
+        - GigabitEthernet0/0
+        - GigabitEthernet0/1
+        - GigabitEthernet0/2
+        - GigabitEthernet0/3
+      register: int
+    - name: Configure interfaces as trunks with allowed VLANs
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: '{{ item }}'
+            mode: trunk
+            trunk:
+              encapsulation: dot1q
+              native_vlan: 1
+              allowed_vlans: 10-15
+        state: merged
+      loop:
+        - GigabitEthernet0/0
+        - GigabitEthernet0/1
+        - GigabitEthernet0/2
+        - GigabitEthernet0/3
+
+    - name: Merge provided configuration with device configuration
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet1/1
+            mode: access
+            access:
+              vlan: 10
+        state: merged

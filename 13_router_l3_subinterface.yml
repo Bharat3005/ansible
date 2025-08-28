@@ -1,0 +1,103 @@
+---
+- name: Configure Router L3 Sub-interfaces for VLANs 10-15 onGigabitEthernet0/1
+  hosts: VIOS-3  # Change to your router group
+  gather_facts: no
+  vars:
+    # Define the parent interface
+    parent_interface: "GigabitEthernet0/1"
+    # Define VLAN range and IP network
+    vlan_start: 10
+    vlan_end: 15
+    ip_network_base: "192.168"
+    subnet_mask: "255.255.255.0"
+    
+  tasks:
+    # - name: Enable the parent interface
+    #   cisco.ios.ios_config:
+    #     lines:
+    #       - no shutdown
+    #     parents: interface {{ parent_interface }}
+    
+    # - name: Configure sub-interfaces with VLANs and IP addresses
+    #   cisco.ios.ios_config:
+    #     lines:
+    #       - encapsulation dot1Q {{ item }}
+    #       - ip address {{ ip_network_base }}.{{ item }}.1 {{ subnet_mask }}
+    #       - no shutdown
+    #     parents: interface {{ parent_interface }}.{{ item }}
+    #     save_when: modified
+    #     match: exact
+    #   loop: "{{ range(vlan_start, vlan_end + 1) | list }}"
+    #   register: subint_config
+      
+    # - name: Verify sub-interface creation and IP assignment
+    #   cisco.ios.ios_command:
+    #     commands:
+    #       - show running-config interface {{ parent_interface }}.{{ item }}
+    #   loop: "{{ range(vlan_start, vlan_end + 1) | list }}"
+    #   register: subint_verify
+    #   ignore_errors: yes
+    
+    # - name: Display sub-interface configurations
+    #   debug:
+    #     msg: "Sub-interface {{ parent_interface }}.{{ item.0 }} config: {{ item.1.stdout[0] if item.1.stdout is defined else 'Interface not found' }}"
+    #   loop: "{{ range(vlan_start, vlan_end + 1) | list | zip(subint_verify.results) | list }}"
+    
+    # - name: Alternative IP assignment method (if above fails)
+    #   cisco.ios.ios_config:
+    #     lines:
+    #       - ip address {{ ip_network_base }}.{{ item }}.1 {{ subnet_mask }}
+    #     parents: 
+    #       - interface {{ parent_interface }}.{{ item }}
+    #     save_when: modified
+    #   loop: "{{ range(vlan_start, vlan_end + 1) | list }}"
+    #   when: subint_config is failed
+    #   register: ip_retry
+    
+    # - name: Display sub-interface configuration results
+    #   debug:
+    #     msg: "Processing sub-interface {{ parent_interface }}.{{ item }}"
+    #   loop: "{{ range(vlan_start, vlan_end + 1) | list }}"
+    
+    # - name: Final verification - Check IP addresses assigned
+    #   cisco.ios.ios_command:
+    #     commands:
+    #       - show ip interface brief | include {{ parent_interface }}
+    #       - show ip route connected
+    #   register: final_verification
+    
+    # - name: Display final verification
+    #   debug:
+    #     var: final_verification.stdout_lines
+
+# Alternative approach using ios_l3_interfaces resource module
+- name: Configure L3 Sub-interfaces using Resource Module (Alternative)
+  hosts: VIOS-3
+  gather_facts: no
+  vars:
+    parent_interface: "GigabitEthernet0/1"
+    
+  tasks:
+    - name: Configure parent interface
+      cisco.ios.ios_interfaces:
+        config:
+          - name: "{{ parent_interface }}"
+            enabled: true
+        state: merged
+    
+    - name: Configure sub-interfaces with IP addresses
+      cisco.ios.ios_l3_interfaces:
+        config:
+          - name: "{{ parent_interface }}.{{ item }}"
+            ipv4:
+              - address: "192.168.{{ item }}.3/24"
+        state: merged
+      loop: "{{ range(10, 16) | list }}"
+      register: l3_config
+    
+    - name: Configure VLAN encapsulation on sub-interfaces
+      cisco.ios.ios_config:
+        lines:
+          - encapsulation dot1Q {{ item }}
+        parents: interface {{ parent_interface }}.{{ item }}
+      loop: "{{ range(10, 16) | list }}"

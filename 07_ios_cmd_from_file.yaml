@@ -1,0 +1,22 @@
+---
+- name: IOS Command from file demo
+  hosts: routers_ssh_keys
+  
+  tasks:
+  - name: config mode command 
+    ios_config:
+     src: cisco_dev.txt
+     diff_against: startup
+     save_when: modified
+     
+  - name: get facts 
+    ios_facts:
+      gather_subset: all
+      
+      
+  - debug: 
+      msg: 
+       - "printing interface stats"
+       - "{{ansible_net_interfaces}}" 
+       - "printing running config"
+       - "{{ansible_net_config}}"

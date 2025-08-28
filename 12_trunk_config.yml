@@ -1,0 +1,31 @@
+---
+- name: IOS Command from file demo
+  hosts: nw_switches
+  gather_facts: no
+  tasks:
+    - name: Configure trunk encapsulation on GigabitEthernet interfaces
+      cisco.ios.ios_config:
+        commands:
+          - switchport trunk encapsulation dot1q
+        parents: interface GigabitEthernet0/2
+      register: config_result
+    
+    - name: Display config result
+      debug:
+        var: config_result.commands
+    
+    - name: Configure interfaces as trunks with allowed VLANs
+      cisco.ios.ios_l2_interfaces:
+        config:
+          - name: GigabitEthernet0/2
+            mode: trunk
+            trunk:
+              encapsulation: dot1q
+              native_vlan: 1
+              allowed_vlans: "10-15"
+        state: merged
+      register: l2_result
+    
+    - name: Display L2 interface result
+      debug:
+        var: l2_result

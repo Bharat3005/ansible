@@ -1,0 +1,27 @@
+---
+
+- name: Network Getting Started First Playbook for configuring the cisco device
+  connection: ansible.netcommon.network_cli
+  gather_facts: false
+  hosts: all
+  tasks:
+
+    - name: Get config for IOS devices
+      cisco.ios.ios_facts:
+        gather_subset: all
+
+    - name: Display the config
+      debug:
+        msg: "The hostname is {{ ansible_net_hostname }} and the OS is {{ ansible_net_version }}"
+
+    - name: Update the hostname
+      cisco.ios.ios_config:
+        backup: yes
+        lines:
+          -en
+          -hostname RW01
+          -username ansible priv 15 secret Nyk@@123#
+
+    - name: Get changed config for IOS devices
+      cisco.ios.ios_facts:
+        gather_subset: all

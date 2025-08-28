@@ -1,0 +1,28 @@
+---
+- name: IOS command module demo
+  hosts: routers
+
+  tasks:
+  - name: Execute show command 
+    ios_command:
+      commands:
+        - show running-config
+        - show ip interface brief
+    register: show_output
+
+  - debug:
+      #  var: show_output
+      msg: "{{show_output.stdout_lines}}"
+
+  - name: condition check
+    ios_command:
+      commands:
+        - show run 
+        - show ip interface brief 
+      match: any
+      wait_for:
+      - "result[0] contains description 'MGMT'"
+      - "result[1] contains Interface gigabitEthernet1/0"
+  #   register: result 
+  # - debug:
+  #     msg: "{{result.stdout_lines}}"

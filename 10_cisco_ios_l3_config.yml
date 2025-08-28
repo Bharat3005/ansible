@@ -1,0 +1,26 @@
+---
+- name: IOS Command from file demo
+  hosts: routers
+  gather_facts: false
+  connection: ansible.netcommon.network_cli
+  
+  tasks:
+  ##### IP assigned to the interface #####
+    - name: Assigning ipv4 to l3 interface
+      cisco.ios.ios_l3_interfaces:  ##### ansible cisco.ios module for l3 configuration
+        config:
+          - name: GigabitEthernet0/1
+            ipv4:
+              - address: 1.1.1.1 255.255.255.0
+        state: merged
+  
+      register: int  ##### registering the integer for printing the output
+    
+    ###### output printing #####
+    - debug: 
+        var: int.before  #### printing before configuration output
+    - debug:
+        var: int.commands ##### printing commands related to configuration 
+    - debug:
+        var: int.after ##### printing after configuration output
+

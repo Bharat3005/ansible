@@ -1,0 +1,42 @@
+---
+- name: IOS config demo 
+  hosts: routers_no_ssh_keys
+
+  tasks:
+  - name: config mode command
+    ios_config:
+      lines:
+        - ip domain-name test.com
+  - name: Configure an interface on cisco device
+    ios_config:
+      parents: interface GigabitEthernet0/1
+      lines:
+       - ip address 10.10.20.2 255.255.255.0 
+       - description configure_via_ansible
+      diff_against: startup
+      save_when: modified
+      
+  - name: Configure multiple interfaces ios config
+    ios_config:
+      parents: "{{item}}"
+      lines:
+       - description configured_via_ansible
+        
+    with_items:
+     - interface GigabitEthernet0/2
+     - interface GigabitEthernet0/3
+     - interface loopback10
+        
+  -  name: Delete existing ACL, then configure new ACL
+     cisco.ios.ios_config:
+      before: 
+      - no ip access-list extended test
+      - sh access-list
+     register: acl_output
+     debug: acl_output
+  
+     lines:
+       - 10 permit ip host 192.0.2.1 any log
+       - 20 permit ip host 192.0.2.2 any log
+     parents: ip access-list extended test
+

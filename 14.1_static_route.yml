@@ -1,0 +1,20 @@
+---
+- name: IOS Command static route demo
+  hosts: nw_routers
+  #gather_facts: no
+  tasks:
+    ######### IP Config Merged ############
+    - name: Configure static route
+      cisco.ios.ios_static_routes:
+        config:
+          - address_families:
+              - afi: ipv4
+                routes:
+                  - dest: 0.0.0.0/0
+                    next_hops:
+                      - forward_router_address: 192.168.122.1
+        state: merged
+      register: router1
+      
+    - debug:
+        var: router1.commands
